@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Print</title>
+
+    <script src="./gbk.min.js"></script>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@5.2.3/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@5.2.3/dist/ionic/ionic.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+
+    <link rel="manifest" href="./manifest.json">
+</head>
+
+<body>
+    <ion-item>
+        <ion-label>Not paired yet</ion-label>
+    </ion-item>
+    <ion-button onclick="pair()">pair</ion-button>
+    <ion-textarea auto-grow="true" rows="15" placeholder="Enter content to print"></ion-textarea>
+    <ion-button onclick="print()">print</ion-button>
+
+    <script>
+        var characteristic;
+
+        async function pair() {
+            let device = await navigator.bluetooth.requestDevice({
+                filters: [{
+                    services: ["000018f0-0000-1000-8000-00805f9b34fb"]
+                }]
+            });
+
+            let server = await device.gatt.connect();
+            let service = await server.getPrimaryService("000018f0-0000-1000-8000-00805f9b34fb");
+            characteristic = await service.getCharacteristic("00002af1-0000-1000-8000-00805f9b34fb");
+
+            document.querySelector("ion-label").innerText = "Paired with " + device.name;
+        }
+
+        async function print() {
+            let text = document.querySelector("ion-textarea").value;
+            let lines = text.split("\n");
+            for (const line of lines) {
+                let content = new Uint8Array(GBK.encode(line + "\n"));
+                let result = await characteristic.writeValue(content);
+            }
+
+        }
+    </script>
+</body>
+
+</html>
